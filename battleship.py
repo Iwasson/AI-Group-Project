@@ -48,7 +48,6 @@ def placeShips(board):
     
     # will need to make sure that we do not overlap the battleship with the carrier
     for ship in [4, 3, 3, 2]:
-        print(ship)
         while placed == False:
             conflict = False
             orientation = random.choice([0,1]) # 0 = horizontal   1 = vertical

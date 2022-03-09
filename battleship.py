@@ -2,8 +2,10 @@ import json
 import random
 
 # how to define a new board
-Player1_Board = [['X'] * 10 for x in range(10)]
+Player1_Board = [[' '] * 10 for x in range(10)]
+Player1_Guess = [[' '] * 10 for x in range(10)]
 Player2_Board = [[' '] * 10 for x in range(10)]
+Player2_Guess = [[' '] * 10 for x in range(10)]
 
 # debug function to check what the state of a board currently is
 def printBoard(board):
@@ -93,6 +95,30 @@ def placeShips(board):
                         placed = True
         placed = False
 
-printBoard(Player2_Board)
-placeShips(Player2_Board)
-printBoard(Player2_Board)
+
+# will perform a random shot, takes in a "guess board"
+def randomShot(guess, enemyBoard):
+    shoot = False
+
+    while shoot == False:
+        fireX = random.randrange(0, 9, 1) # pick a random starting x
+        fireY = random.randrange(0, 9, 1) # pick a random starting y
+
+        if guess[fireX][fireY] == ' ': # check if we have already tried to shoot here
+            if enemyBoard[fireX][fireY] == ' ': # if there was no ship, record miss
+                guess[fireX][fireY] = 'M'
+            else:                               # if there was a ship, record the hit
+                guess[fireX][fireY] = 'H'
+                enemyBoard[fireX][fireY] = 'H'  # update the enemy board to reflect the hit
+            shoot = True
+
+
+
+
+placeShips(Player1_Board)
+
+for x in range(10):
+    randomShot(Player2_Guess, Player1_Board)
+
+printBoard(Player2_Guess)
+printBoard(Player1_Board)

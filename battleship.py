@@ -25,8 +25,8 @@ def placeShips(board):
     # place the carrier
     orientation = random.choice([0,1]) # 0 = horizontal   1 = vertical
     
-    startX = random.randrange(0, 9, 1) # pick a random starting x
-    startY = random.randrange(0, 9, 1) # pick a random starting y
+    startX = random.randrange(0, 10, 1) # pick a random starting x
+    startY = random.randrange(0, 10, 1) # pick a random starting y
 
     # if we are horizontal, check whether or not we have enough room
     # check left then right
@@ -53,8 +53,8 @@ def placeShips(board):
         while placed == False:
             conflict = False
             orientation = random.choice([0,1]) # 0 = horizontal   1 = vertical
-            startX = random.randrange(0, 9, 1) # pick a random starting x
-            startY = random.randrange(0, 9, 1) # pick a random starting y
+            startX = random.randrange(0, 10, 1) # pick a random starting x
+            startY = random.randrange(0, 10, 1) # pick a random starting y
 
             if orientation == 0:
                 if startY >= ship - 1:
@@ -101,8 +101,8 @@ def randomShot(guess, enemyBoard):
     shoot = False
 
     while shoot == False:
-        fireX = random.randrange(0, 9, 1) # pick a random starting x
-        fireY = random.randrange(0, 9, 1) # pick a random starting y
+        fireX = random.randrange(0, 10, 1) # pick a random starting x
+        fireY = random.randrange(0, 10, 1) # pick a random starting y
 
         if guess[fireX][fireY] == ' ': # check if we have already tried to shoot here
             if enemyBoard[fireX][fireY] == ' ': # if there was no ship, record miss

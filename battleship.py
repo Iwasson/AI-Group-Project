@@ -452,7 +452,7 @@ if file_exists == True:
 else:
     qMatrix = [[0] * 6 for x in range(1024)] # this will create a blank qMatrix that is 1024 X 6
 
-qTraining(1000, 20, 0.5, qMatrix, moveList, 100)
+qTraining(100000, 20, 0.5, qMatrix, moveList, 1000)
 
 jsonQMatrix = json.dumps(qMatrix)
 with open('qMatrix.json', 'w') as outfile:

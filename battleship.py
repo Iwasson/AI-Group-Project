@@ -1,17 +1,201 @@
 import json
 import random
 from os.path import exists
+import threading
 
-hitreward = 10
-badReward = -2
-missreward = -2
-wallreward = -2
+# genetic algorithm variables
+POPSIZE = 10
+MUTATE = 15
+MAXITERATIONS = 10
+OUTPUT = 10
+EPISODES = 100
 
-# how to define a new board
-Player1_Board = [[' '] * 10 for x in range(10)]
-Player1_Guess = [[' '] * 10 for x in range(10)]
-Player2_Board = [[' '] * 10 for x in range(10)]
-Player2_Guess = [[' '] * 10 for x in range(10)]
+def randrange_float(start, stop, step):
+    return random.randint(0, int((stop - start) / step)) * step + start
+
+
+def initPopulation(popsize):
+    population = []
+
+    for x in range(popsize):
+        child = {
+            "hitreward" : 0,            # a reward value, lets stick to anything                between 1 and 100
+            "badReward" : 0,            # penatly for hitting a spot we have already shot at,   keep between -100 and -1
+            "missreward" : 0,           # penatly for missing,                                  keep between -100 and -1
+            "wallreward" : 0,           # penatly for attempting to shoot a wall,               keep between -100 and -1
+            "epsilon" : 0,              # percent chance to do something random,                keep between 1 and 100%
+            "epsilonFactor" : 0,        # how much we want to decrease the epsilon value        keep between 0 and 1
+            "epsilonDecay" : 0,         # how often we want to decrease the epsilon value       keep between 1 and 100
+            "eta" : 0,                  # learning rate                                         keep between 0.1 and 1
+            "gamma" : 0,                # gamma rate                                            keep between 0.1 and 1
+            "fitness" : 0               # fitness rating                                        do not modify this
+        }
+
+        child["hitreward"] = random.randrange(1, 100, 1)
+        child["badReward"] = random.randrange(-100, -1, 1)
+        child["missreward"] = random.randrange(-100, -1, 1)
+        child["wallreward"] = random.randrange(-100, -1, 1)
+        child["epsilon"] = random.randrange(1, 100, 1)
+        child["epsilonFactor"] = randrange_float(0, 1, 0.1)
+        child["epsilonDecay"] = random.randrange(1, 100, 1)
+        child["eta"] = randrange_float(0.1, 1, 0.1)
+        child["gamma"] = randrange_float(0.1, 1, 0.1)
+
+        # child["fitness"] = random.randrange(0, 100)       # for debugging the sort function
+
+        population.append(child)
+    
+    return population
+
+# sorts a population by its fitness value, higher fitness first
+def sortPopulation(population):
+    sortPopulation = sorted(population, key=lambda i: (i['fitness']), reverse=True)
+    return sortPopulation
+
+# picks a single parent, tending towards the fittest parent first
+def parentSelection(population):
+    sigmaF = 0
+
+    for i in range(len(population)):
+        sigmaF += population[i]["fitness"]
+    
+    while True:
+        for i in range(len(population)):
+            tempFit = population[i]["fitness"] / sigmaF
+            randFloat = round(random.uniform(0.0,1.0), 2) # get a random 2 decimal number between 0 and 1
+
+            if randFloat < tempFit:
+                return population[i]
+
+
+# mutate child function
+def mutate(child):
+    changeChance = random.randrange(0, 100)
+    if changeChance < MUTATE:
+        mutantChild = {
+            "hitreward" : 0,            # a reward value, lets stick to anything                between 1 and 100
+            "badReward" : 0,            # penatly for hitting a spot we have already shot at,   keep between -100 and -1
+            "missreward" : 0,           # penatly for missing,                                  keep between -100 and -1
+            "wallreward" : 0,           # penatly for attempting to shoot a wall,               keep between -100 and -1
+            "epsilon" : 0,              # percent chance to do something random,                keep between 1 and 100%
+            "epsilonFactor" : 0,        # how much we want to decrease the epsilon value        keep between 0 and 1
+            "epsilonDecay" : 0,         # how often we want to decrease the epsilon value       keep between 1 and 100
+            "eta" : 0,                  # learning rate                                         keep between 0.1 and 1
+            "gamma" : 0,                # gamma rate                                            keep between 0.1 and 1
+            "fitness" : 0               # fitness rating                                        do not modify this
+        }
+
+        mutantChild["hitreward"] = random.randrange(1, 100, 1)
+        mutantChild["badReward"] = random.randrange(-100, -1, 1)
+        mutantChild["missreward"] = random.randrange(-100, -1, 1)
+        mutantChild["wallreward"] = random.randrange(-100, -1, 1)
+        mutantChild["epsilon"] = random.randrange(1, 100, 1)
+        mutantChild["epsilonFactor"] = randrange_float(0, 1, 0.1)
+        mutantChild["epsilonDecay"] = random.randrange(1, 100, 1)
+        mutantChild["eta"] = randrange_float(0.1, 1, 0.1)
+        mutantChild["gamma"] = randrange_float(0.1, 1, 0.1)
+
+
+
+        randMutation = random.randrange(0,9)
+        child[randMutation] = mutantChild[randMutation]
+
+        return child
+
+    else:
+        return child
+
+# pick children
+def makeChildren(parentA, parentB):
+    newPop = []
+
+    for i in range(2):
+        crossover = random.randrange(9)
+        child = {
+            "hitreward" : 0,            # a reward value, lets stick to anything                between 1 and 100
+            "badReward" : 0,            # penatly for hitting a spot we have already shot at,   keep between -100 and -1
+            "missreward" : 0,           # penatly for missing,                                  keep between -100 and -1
+            "wallreward" : 0,           # penatly for attempting to shoot a wall,               keep between -100 and -1
+            "epsilon" : 0,              # percent chance to do something random,                keep between 1 and 100%
+            "epsilonFactor" : 0,        # how much we want to decrease the epsilon value        keep between 0 and 1
+            "epsilonDecay" : 0,         # how often we want to decrease the epsilon value       keep between 1 and 100
+            "eta" : 0,                  # learning rate                                         keep between 0.1 and 1
+            "gamma" : 0,                # gamma rate                                            keep between 0.1 and 1
+            "fitness" : 0               # fitness rating                                        do not modify this
+        }
+
+        for x in range(crossover):
+            child[x] = parentA[x]
+        for y in range(crossover, 9):
+            child[y] = parentB[x]
+
+        child = mutate(child)
+        newPop.append(child)
+    
+    return newPop
+
+
+def playBattleship(episodes, population):
+    newPop = []
+    threads = []
+    #qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward)
+    # start a thread for each child of the original population
+    for x in range(len(population)):
+        qMatrix = [[0] * 6 for x in range(1024)] # this will create a blank qMatrix that is 1024 X 6
+        moveList = initMoveList()
+        fits = []
+        thread = threading.Thread(target=qTraining, args=(episodes, population[x]["epsilon"], population[x]["epsilonFactor"], qMatrix, moveList, 0, population[x]["epsilonDecay"], population[x]["eta"], population[x]["gamma"], population[x]["hitreward"], population[x]["badReward"], population[x]["missreward"], population[x]["wallreward"], fits, x))
+        threads.append(thread)
+
+    for x in range(len(threads)):
+        print("Starting new thread: " + str(x))
+        threads[x].start()
+    
+    for x in range(len(threads)):
+        threads[x].join()
+        print("Thread " + str(x) + " Has finished")
+    print("All threads have finished.")
+    
+    fits = sorted(fits, key=lambda i: (i['thread']))
+
+    for x in range(len(fits)):
+        population[x]["fitness"] = fits[x]["fitness"]
+        newPop.append(population[x])
+
+    return newPop
+
+
+
+# attempt to solve for the best qMatrix
+def geneticQ():
+    population = initPopulation(POPSIZE)
+    newPop = []
+
+    for i in range(MAXITERATIONS):
+        newPop = playBattleship(EPISODES, population)
+        newPop = sortPopulation(newPop)
+
+        if i % OUTPUT == 0:
+            avgFit = 0
+
+            for x in range(len(newPop)):
+                avgFit += newPop[x]["fitness"]
+            avgFit = avgFit / len(newPop)
+
+            print("Best Child: " + str(newPop[0]) + "\nBest Child fitness: " + str(newPop[0]["fitness"]) + "\nAverage Fitness: " + str(avgFit))
+
+        population = []
+
+        halfLen = round(len(newPop) / 2)
+        
+        for y in range(halfLen):
+            parentA = parentSelection(newPop)
+            parentB = parentSelection(newPop)
+
+            children = makeChildren(parentA, parentB)
+
+            population.append(children[0])
+            population.append(children[1])
 
 # debug function to check what the state of a board currently is
 def printBoard(board):
@@ -272,8 +456,9 @@ def checkWin(enemyBoard):
 # training function. This will train the qMatrix
 # can store and load a qMatrix from storage, allowing us to
 # preserve the current state of the AI 
-def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
-    
+def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward, fits, threadNum):
+    averageReward = []
+
     # begin training over x episodes
     for e in range(episodes):
         # generate a new battle ship board
@@ -302,7 +487,7 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
         current, north, east, south, west = scan(x, y, guessBoard)
 
         # decrease the epsilon rate every 50 epocs or so
-        if e % 50 == 0 and e != 0 and epsilon > 0:
+        if e % epsilonDecay == 0 and e != 0:
             epsilon -= epsilonFactor
         
         finished = False    # keeps track of when the computer has finished sinking all ships
@@ -439,7 +624,7 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
             newPerm = getPermutation(moveList, current, north, east, south, west)
             nextAction = pickGreedy(qMatrix, newPerm, epsilon)
 
-            qMatrix[perm][option] += 0.2 * (reward + 0.9 * qMatrix[newPerm][nextAction] - qMatrix[perm][option])
+            qMatrix[perm][option] += eta * (reward + gamma * qMatrix[newPerm][nextAction] - qMatrix[perm][option])
 
             finished = checkWin(enemyBoard) # this will stop the while loop once we have finished hitting all of the enemy ships
 
@@ -447,10 +632,36 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
             #printBoard(enemyBoard)
             #printBoard(guessBoard)
             #print("Turn: " + str(iterations + 1) + " Total reward is: " + str(report)) # output what the reward is for the current turn
+        averageReward.append(report)
         
-        if e % reportValue == 0 and e != 0:
+        if reportValue != 0 and e % reportValue == 0 and e != 0:
             print("Episode: " + str(e))
             print("Turns to finish: " + str(iterations) + " Total reward is: " + str(report)) # output what the reward is for the current turn
+    fit = {
+        "thread" : threadNum,
+        "fitness" : sum(averageReward) / len(averageReward)
+    }
+    fits.append(fit)
+    return sum(averageReward) / len(averageReward)
+
+
+
+# population = initPopulation(100)
+# print(population)
+# population = sortPopulation(population)
+# print(population)
+
+
+geneticQ()
+
+"""
+# qLearning variables
+hitreward = 25
+badReward = -10
+missreward = -5
+wallreward = -15
+
+
 
 
 moveList = initMoveList()
@@ -462,9 +673,12 @@ if file_exists == True:
     print("LOADING")
 else:
     qMatrix = [[0] * 6 for x in range(1024)] # this will create a blank qMatrix that is 1024 X 6
+    print("MAKING NEW MATRIX")
 
-qTraining(10000, 15, 0.5, qMatrix, moveList, 100)
+qTraining(10000, 20, 0.5, qMatrix, moveList, 100, 50, 0.2, 0.9, hitreward, badReward, missreward, wallreward)
 
 jsonQMatrix = json.dumps(qMatrix)
 with open('qMatrix.json', 'w') as outfile:
     outfile.write(jsonQMatrix)
+
+"""

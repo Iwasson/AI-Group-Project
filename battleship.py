@@ -1,6 +1,11 @@
 import json
 import random
-from xmlrpc.client import MAXINT
+from os.path import exists
+
+hitreward = 10
+badReward = -2
+missreward = -2
+wallreward = -2
 
 # how to define a new board
 Player1_Board = [[' '] * 10 for x in range(10)]
@@ -267,7 +272,7 @@ def checkWin(enemyBoard):
 # training function. This will train the qMatrix
 # can store and load a qMatrix from storage, allowing us to
 # preserve the current state of the AI 
-def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, load):
+def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
     
     # begin training over x episodes
     for e in range(episodes):
@@ -314,109 +319,109 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, load):
             if option == 0:     # shoot our current location
                 #check if we have already shot at this location before
                 if current == 1 or current == 2:
-                    reward = -5
-                    report -= 5
+                    reward =  badReward
+                    report += badReward
 
                 # check if we hit or miss
                 elif enemyBoard[x][y] == ' ':     # give penalty for misses
                     guessBoard[x][y] = 'M'
-                    reward = -2
-                    report -= 2
+                    reward =  missreward
+                    report += missreward
                 elif enemyBoard[x][y] == 'X':   # give reward for hits
                     guessBoard[x][y] = 'H'
                     enemyBoard[x][y] = 'H'
-                    reward = 10
-                    report += 10
+                    reward =  hitreward
+                    report += hitreward
                 
             if option == 1:     # shoot north
                 # check if north is a wall, penalize if so
                 if north == 3:
-                    reward = -5
-                    report -= 5
+                    reward =  wallreward
+                    report += wallreward
                 # check if we have shot at this before
                 elif north == 1 or north == 2:
-                    reward = -5
-                    report -= 5
+                    reward =  badReward
+                    report += badReward
                 elif enemyBoard[x-1][y] == ' ':
                     guessBoard[x-1][y] = 'M'
-                    reward = -2
-                    report -= 2
+                    reward =  missreward
+                    report += missreward
                     x -= 1
                 elif enemyBoard[x-1][y] == 'X':
                     guessBoard[x-1][y] = 'H'
                     enemyBoard[x-1][y] = 'H'
-                    reward = 10
-                    report += 10
+                    reward =  hitreward
+                    report += hitreward
                     x -= 1
 
             if option == 2:     # shoot east
                 if east == 3:
-                    reward = -5
-                    report -= 5
+                    reward =  wallreward
+                    report += wallreward
                 # check if we have shot at this before
                 elif east == 1 or east == 2:
                     reward = -5
                     report -= 5
                 elif enemyBoard[x][y+1] == ' ':
                     guessBoard[x][y+1] = 'M'
-                    reward = -2
-                    report -= 2
+                    reward =  missreward
+                    report += missreward
                     y += 1
                 elif enemyBoard[x][y+1] == 'X':
                     guessBoard[x][y+1] = 'H'
                     enemyBoard[x][y+1] = 'H'
-                    reward = 10
-                    report += 10
+                    reward =  hitreward
+                    report += hitreward
                     y += 1
                 
             if option == 3:     # shoot south
                 if south == 3:
-                    reward = -5
-                    report -= 5
+                    reward =  wallreward
+                    report += wallreward
                 # check if we have shot at this before
                 elif south == 1 or south == 2:
-                    reward = -5
-                    report -= 5
+                    reward =  badReward
+                    report += badReward
                 elif enemyBoard[x+1][y] == ' ':
                     guessBoard[x+1][y] = 'M'
-                    reward = -2
-                    report -= 2
+                    reward =  missreward
+                    report += missreward
                     x += 1
                 elif enemyBoard[x+1][y] == 'X':
                     guessBoard[x+1][y] = 'H'
                     enemyBoard[x+1][y] = 'H'
-                    reward = 10
-                    report += 10
+                    reward =  hitreward
+                    report += hitreward
                     x += 1
 
             if option == 4:     # shoot west
                 if west == 3:
-                    reward = -5
-                    report -= 5
+                    reward =  wallreward
+                    report += wallreward
                 # check if we have shot at this before
                 elif west == 1 or west == 2:
-                    reward = -5
-                    report -= 5
+                    reward =  badReward
+                    report += badReward
                 elif enemyBoard[x][y-1] == ' ':
                     guessBoard[x][y-1] = 'M'
-                    reward = -2
-                    report -= 2
+                    reward =  missreward
+                    report += missreward
                     y -= 1
                 elif enemyBoard[x][y-1] == 'X':
                     guessBoard[x][y-1] = 'H'
                     enemyBoard[x][y-1] = 'H'
-                    reward = 10
-                    report += 10
+                    reward =  hitreward
+                    report += hitreward
                     y -= 1
 
             if option == 5:     # this means that we are shooting a new random location
                 x, y = randomShot(guessBoard, enemyBoard) # this will always be a valid location, no walls possible
                 if guessBoard[x][y] == 'M':
-                    reward = -2
-                    report -= 2
+                    reward =  missreward
+                    report += missreward
                 else:
-                    reward = 10
-                    report += 10
+                    reward =  hitreward
+                    report += hitreward
 
             current, north, east, south, west = scan(x, y, guessBoard)
             newPerm = getPermutation(moveList, current, north, east, south, west)
@@ -433,11 +438,22 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, load):
             #printBoard(guessBoard)
             #print("Turn: " + str(iterations + 1) + " Total reward is: " + str(report)) # output what the reward is for the current turn
         
-        if e % 1000 == 0 and e != 0:
+        if e % reportValue == 0 and e != 0:
             print("Episode: " + str(e))
             print("Turns to finish: " + str(iterations + 1) + " Total reward is: " + str(report)) # output what the reward is for the current turn
 
 
 moveList = initMoveList()
-qMatrix = [[0] * 6 for x in range(1024)] # this will create a qMatrix that is 1024 X 6
-qTraining(5000, 20, 0.5, qMatrix, moveList, False)
+
+file_exists = exists("qMatrix.json")
+if file_exists == True:
+    f = open("qMatrix.json") 
+    qMatrix = json.load(f)
+else:
+    qMatrix = [[0] * 6 for x in range(1024)] # this will create a blank qMatrix that is 1024 X 6
+
+qTraining(1000, 20, 0.5, qMatrix, moveList, 100)
+
+jsonQMatrix = json.dumps(qMatrix)
+with open('qMatrix.json', 'w') as outfile:
+    outfile.write(jsonQMatrix)

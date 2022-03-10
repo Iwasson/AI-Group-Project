@@ -425,9 +425,9 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
 
             current, north, east, south, west = scan(x, y, guessBoard)
             newPerm = getPermutation(moveList, current, north, east, south, west)
-
             nextAction = pickGreedy(qMatrix, newPerm, epsilon)
-            qMatrix[current][option] += 0.2 * (reward + 0.9 * qMatrix[newPerm][nextAction] - qMatrix[current][option])
+
+            qMatrix[perm][option] += 0.2 * (reward + 0.9 * qMatrix[newPerm][nextAction] - qMatrix[perm][option])
 
             
             iterations += 1

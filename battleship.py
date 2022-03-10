@@ -327,11 +327,13 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
                     guessBoard[x][y] = 'M'
                     reward =  missreward
                     report += missreward
+                    iterations += 1
                 elif enemyBoard[x][y] == 'X':   # give reward for hits
                     guessBoard[x][y] = 'H'
                     enemyBoard[x][y] = 'H'
                     reward =  hitreward
                     report += hitreward
+                    iterations += 1
                 
             if option == 1:     # shoot north
                 # check if north is a wall, penalize if so
@@ -346,12 +348,14 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
                     guessBoard[x-1][y] = 'M'
                     reward =  missreward
                     report += missreward
+                    iterations += 1
                     x -= 1
                 elif enemyBoard[x-1][y] == 'X':
                     guessBoard[x-1][y] = 'H'
                     enemyBoard[x-1][y] = 'H'
                     reward =  hitreward
                     report += hitreward
+                    iterations += 1
                     x -= 1
 
             if option == 2:     # shoot east
@@ -366,12 +370,14 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
                     guessBoard[x][y+1] = 'M'
                     reward =  missreward
                     report += missreward
+                    iterations += 1
                     y += 1
                 elif enemyBoard[x][y+1] == 'X':
                     guessBoard[x][y+1] = 'H'
                     enemyBoard[x][y+1] = 'H'
                     reward =  hitreward
                     report += hitreward
+                    iterations += 1
                     y += 1
                 
             if option == 3:     # shoot south
@@ -386,12 +392,14 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
                     guessBoard[x+1][y] = 'M'
                     reward =  missreward
                     report += missreward
+                    iterations += 1
                     x += 1
                 elif enemyBoard[x+1][y] == 'X':
                     guessBoard[x+1][y] = 'H'
                     enemyBoard[x+1][y] = 'H'
                     reward =  hitreward
                     report += hitreward
+                    iterations += 1
                     x += 1
 
             if option == 4:     # shoot west
@@ -406,12 +414,14 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
                     guessBoard[x][y-1] = 'M'
                     reward =  missreward
                     report += missreward
+                    iterations += 1
                     y -= 1
                 elif enemyBoard[x][y-1] == 'X':
                     guessBoard[x][y-1] = 'H'
                     enemyBoard[x][y-1] = 'H'
                     reward =  hitreward
                     report += hitreward
+                    iterations += 1
                     y -= 1
 
             if option == 5:     # this means that we are shooting a new random location
@@ -419,9 +429,11 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
                 if guessBoard[x][y] == 'M':
                     reward =  missreward
                     report += missreward
+                    iterations += 1
                 else:
                     reward =  hitreward
                     report += hitreward
+                    iterations += 1
 
             current, north, east, south, west = scan(x, y, guessBoard)
             newPerm = getPermutation(moveList, current, north, east, south, west)
@@ -429,8 +441,6 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
 
             qMatrix[perm][option] += 0.2 * (reward + 0.9 * qMatrix[newPerm][nextAction] - qMatrix[perm][option])
 
-            
-            iterations += 1
             finished = checkWin(enemyBoard) # this will stop the while loop once we have finished hitting all of the enemy ships
 
             # FOR DEBUGGING ONLY!
@@ -440,7 +450,7 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue):
         
         if e % reportValue == 0 and e != 0:
             print("Episode: " + str(e))
-            print("Turns to finish: " + str(iterations + 1) + " Total reward is: " + str(report)) # output what the reward is for the current turn
+            print("Turns to finish: " + str(iterations) + " Total reward is: " + str(report)) # output what the reward is for the current turn
 
 
 moveList = initMoveList()
@@ -449,10 +459,11 @@ file_exists = exists("qMatrix.json")
 if file_exists == True:
     f = open("qMatrix.json") 
     qMatrix = json.load(f)
+    print("LOADING")
 else:
     qMatrix = [[0] * 6 for x in range(1024)] # this will create a blank qMatrix that is 1024 X 6
 
-qTraining(100000, 20, 0.5, qMatrix, moveList, 1000)
+qTraining(10000, 15, 0.5, qMatrix, moveList, 100)
 
 jsonQMatrix = json.dumps(qMatrix)
 with open('qMatrix.json', 'w') as outfile:

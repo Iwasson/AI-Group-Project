@@ -1,14 +1,16 @@
 import json
+from multiprocessing.dummy import freeze_support
 import random
 from os.path import exists
 import threading
+from multiprocessing import Process, Queue
 
 # genetic algorithm variables
-POPSIZE = 100
+POPSIZE = 10
 MUTATE = 15
-MAXITERATIONS = 1000
-OUTPUT = 100
-EPISODES = 10000
+MAXITERATIONS = 100
+OUTPUT = 1
+EPISODES = 100
 
 def randrange_float(start, stop, step):
     return random.randint(0, int((stop - start) / step)) * step + start
@@ -179,6 +181,7 @@ def playBattleship(episodes, population):
 
     return newPop
 
+# multithreaded version
 def playBattleshipThreaded(episodes, population):
     newPop = []
     threads = []
@@ -208,41 +211,70 @@ def playBattleshipThreaded(episodes, population):
 
     return newPop
 
+# multicored version
+def playBattleshipMultiCore(episodes, population):
+    newPop = []
+    #if __name__ == '__main__':
+    cores = []
+    queue = Queue()
+    rets = []
+    #qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward)
+    # start a thread for each child of the original population
+    for x in range(len(population)):
+        print("Starting new process: " + str(x))
+        qMatrix = [[0] * 6 for x in range(1024)] # this will create a blank qMatrix that is 1024 X 6
+        moveList = initMoveList()
+        core = Process(target=qTraining, args=(episodes, population[x]["epsilon"], population[x]["epsilonFactor"], qMatrix, moveList, 0, population[x]["epsilonDecay"], population[x]["eta"], population[x]["gamma"], population[x]["hitreward"], population[x]["badReward"], population[x]["missreward"], population[x]["wallreward"], queue))
+        cores.append(core)
+        core.start()
 
+    for x in range(len(cores)):
+        ret = queue.get()
+        rets.append(ret)
+        cores[x].join()
+        population[x]["fitness"] = rets[x]
+        newPop.append(population[x])
+        print("Process " + str(x) + " Has finished")
+    
+    print("All process have finished.")
+    
+    return newPop
 
 # attempt to solve for the best qMatrix
 def geneticQ():
     population = initPopulation(POPSIZE)
     newPop = []
 
-    for i in range(MAXITERATIONS):
-        print("Starting training...")
-        #newPop = playBattleship(EPISODES, population)
-        newPop = playBattleshipThreaded(EPISODES, population)
-        print("Training ended...")
-        newPop = sortPopulation(newPop)
+    if __name__ == '__main__':
+        for i in range(MAXITERATIONS):
+            print("Starting training...")
+            #newPop = playBattleship(EPISODES, population)
+            #newPop = playBattleshipThreaded(EPISODES, population)
+            newPop = playBattleshipMultiCore(EPISODES, population)
+            print("Training ended...")
+            newPop = sortPopulation(newPop)
 
-        if i % OUTPUT == 0:
-            avgFit = 0
+            if i % OUTPUT == 0:
+                avgFit = 0
 
-            for x in range(len(newPop)):
-                avgFit += newPop[x]["fitness"]
-            avgFit = avgFit / len(newPop)
+                for x in range(len(newPop)):
+                    avgFit += newPop[x]["fitness"]
+                avgFit = avgFit / len(newPop)
 
-            print("Best Child: " + str(newPop[0]) + "\nBest Child fitness: " + str(newPop[0]["fitness"]) + "\nAverage Fitness: " + str(avgFit))
+                print("Best Child: " + str(newPop[0]) + "\nBest Child fitness: " + str(newPop[0]["fitness"]) + "\nAverage Fitness: " + str(avgFit))
 
-        population = []
+            population = []
 
-        halfLen = round(len(newPop) / 2)
-        
-        for y in range(halfLen):
-            parentA = parentSelection(newPop)
-            parentB = parentSelection(newPop)
+            halfLen = round(len(newPop) / 2)
+            
+            for y in range(halfLen):
+                parentA = parentSelection(newPop)
+                parentB = parentSelection(newPop)
 
-            children = makeChildren(parentA, parentB)
+                children = makeChildren(parentA, parentB)
 
-            population.append(children[0])
-            population.append(children[1])
+                population.append(children[0])
+                population.append(children[1])
 
 # debug function to check what the state of a board currently is
 def printBoard(board):
@@ -450,9 +482,9 @@ def pickGreedy(qMatrix, perm, epsilon):
     # chance to shoot a random location
     # or pick the worst move
     if randomChance <= epsilon:
-        coinFlip = random.randrange(0, 1, 1)
+        coinFlip = random.randrange(0, 100, 1)
 
-        if coinFlip == 0:
+        if coinFlip > 70:
             minimum = qMatrix[perm][0]
             options = []
 
@@ -503,7 +535,7 @@ def checkWin(enemyBoard):
 # training function. This will train the qMatrix
 # can store and load a qMatrix from storage, allowing us to
 # preserve the current state of the AI 
-def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward, threaded, fits, thread):
+def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward, queue):
     averageReward = []
 
     # begin training over x episodes
@@ -534,7 +566,7 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
         current, north, east, south, west = scan(x, y, guessBoard)
 
         # decrease the epsilon rate every 50 epocs or so
-        if e % epsilonDecay == 0 and e != 0:
+        if e % epsilonDecay == 0 and e != 0 and epsilon > 5:
             epsilon -= epsilonFactor
         
         finished = False    # keeps track of when the computer has finished sinking all ships
@@ -684,7 +716,7 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
         if reportValue != 0 and e % reportValue == 0 and e != 0:
             print("Episode: " + str(e))
             print("Turns to finish: " + str(iterations) + " Total reward is: " + str(report)) # output what the reward is for the current turn
-
+    """
     if threaded == True:
         fit = {
             "thread" : thread,
@@ -692,6 +724,8 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
         }
 
         fits.append(fit)
+    """
+    queue.put(sum(averageReward) / len(averageReward))
     return sum(averageReward) / len(averageReward)
 
 

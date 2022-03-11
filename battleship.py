@@ -1,5 +1,4 @@
 import json
-from multiprocessing.dummy import freeze_support
 import random
 from os.path import exists
 import threading
@@ -8,9 +7,9 @@ from multiprocessing import Process, Queue
 # genetic algorithm variables
 POPSIZE = 10
 MUTATE = 15
-MAXITERATIONS = 100
-OUTPUT = 1
-EPISODES = 100
+MAXITERATIONS = 1000
+OUTPUT = 100
+EPISODES = 10000
 
 def randrange_float(start, stop, step):
     return random.randint(0, int((stop - start) / step)) * step + start
@@ -163,8 +162,7 @@ def makeChildren(parentA, parentB):
         newPop.append(child)
     
     return newPop
-
-
+  
 def playBattleship(episodes, population):
     newPop = []
 
@@ -211,7 +209,7 @@ def playBattleshipThreaded(episodes, population):
 
     return newPop
 
-# multicored version
+# multicored version  
 def playBattleshipMultiCore(episodes, population):
     newPop = []
     #if __name__ == '__main__':
@@ -240,7 +238,7 @@ def playBattleshipMultiCore(episodes, population):
     
     return newPop
 
-# attempt to solve for the best qMatrix
+# attempt to solve for the best qMatrix  
 def geneticQ():
     population = initPopulation(POPSIZE)
     newPop = []

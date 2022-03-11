@@ -97,7 +97,7 @@ def mutate(child):
         #mutantChild["eta"] = randrange_float(0.1, 1, 0.1)
         #mutantChild["gamma"] = randrange_float(0.1, 1, 0.1)
 
-        randMutation = random.randrange(0,9)
+        randMutation = random.randrange(0,7)
 
         mutantChildValues = mutantChild.values()
         mutantChildList = list(mutantChildValues)
@@ -537,6 +537,7 @@ def checkWin(enemyBoard):
 # preserve the current state of the AI 
 def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward, queue):
     averageReward = []
+    averageIterations = []
 
     # begin training over x episodes
     for e in range(episodes):
@@ -712,6 +713,7 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
             #printBoard(guessBoard)
             #print("Turn: " + str(iterations + 1) + " Total reward is: " + str(report)) # output what the reward is for the current turn
         averageReward.append(report)
+        averageIterations.append(iterations)
         
         if reportValue != 0 and e % reportValue == 0 and e != 0:
             print("Episode: " + str(e))
@@ -725,8 +727,11 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
 
         fits.append(fit)
     """
-    queue.put(sum(averageReward) / len(averageReward))
-    return sum(averageReward) / len(averageReward)
+    
+    #queue.put(sum(averageReward) / len(averageReward))
+    #return sum(averageReward) / len(averageReward)
+    queue.put(sum(averageIterations) / len(averageIterations))
+    return sum(averageIterations) / len(averageIterations)
 
 
 

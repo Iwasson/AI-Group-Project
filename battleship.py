@@ -4,11 +4,11 @@ from os.path import exists
 import threading
 
 # genetic algorithm variables
-POPSIZE = 10
+POPSIZE = 100
 MUTATE = 15
-MAXITERATIONS = 10
-OUTPUT = 10
-EPISODES = 100
+MAXITERATIONS = 1000
+OUTPUT = 100
+EPISODES = 10000
 
 def randrange_float(start, stop, step):
     return random.randint(0, int((stop - start) / step)) * step + start
@@ -19,27 +19,27 @@ def initPopulation(popsize):
 
     for x in range(popsize):
         child = {
-            "hitreward" : 0,            # a reward value, lets stick to anything                between 1 and 100
-            "badReward" : 0,            # penatly for hitting a spot we have already shot at,   keep between -100 and -1
-            "missreward" : 0,           # penatly for missing,                                  keep between -100 and -1
-            "wallreward" : 0,           # penatly for attempting to shoot a wall,               keep between -100 and -1
-            "epsilon" : 0,              # percent chance to do something random,                keep between 1 and 100%
-            "epsilonFactor" : 0,        # how much we want to decrease the epsilon value        keep between 0 and 1
-            "epsilonDecay" : 0,         # how often we want to decrease the epsilon value       keep between 1 and 100
-            "eta" : 0,                  # learning rate                                         keep between 0.1 and 1
-            "gamma" : 0,                # gamma rate                                            keep between 0.1 and 1
+            "hitreward" : 0,            # a reward value, lets stick to anything                between 1 and 50
+            "badReward" : 0,            # penatly for hitting a spot we have already shot at,   keep between -15 and -1
+            "missreward" : 0,           # penatly for missing,                                  keep between -15 and -1
+            "wallreward" : 0,           # penatly for attempting to shoot a wall,               keep between -15 and -1
+            "epsilon" : 0,              # percent chance to do something random,                keep between 1 and 50%
+            "epsilonFactor" : 0,        # how much we want to decrease the epsilon value        keep between 0.1 and 1
+            "epsilonDecay" : 0,         # how often we want to decrease the epsilon value       keep between 1 and 100 in multiples of 10
+            "eta" : 0.2,                # learning rate               (CANT MODIFY THIS)        keep between 0.1 and 1
+            "gamma" : 0.9,              # gamma rate                  (CANT MODIFY THIS)        keep between 0.1 and 1
             "fitness" : 0               # fitness rating                                        do not modify this
         }
 
-        child["hitreward"] = random.randrange(1, 100, 1)
-        child["badReward"] = random.randrange(-100, -1, 1)
-        child["missreward"] = random.randrange(-100, -1, 1)
-        child["wallreward"] = random.randrange(-100, -1, 1)
-        child["epsilon"] = random.randrange(1, 100, 1)
-        child["epsilonFactor"] = randrange_float(0, 1, 0.1)
-        child["epsilonDecay"] = random.randrange(1, 100, 1)
-        child["eta"] = randrange_float(0.1, 1, 0.1)
-        child["gamma"] = randrange_float(0.1, 1, 0.1)
+        child["hitreward"] = random.randrange(1, 50, 1)
+        child["missreward"] = random.randrange(-15, -1, 1)
+        child["badReward"] = random.randrange(-15, -1, 1) + child["missreward"]     # need to make sure that shooting somewhere we have already shot it is bad
+        child["wallreward"] = random.randrange(-15, -1, 1) + child["missreward"]    # need to make sure that shooting at a wall is worse than missing
+        child["epsilon"] = random.randrange(5, 30, 5)
+        child["epsilonFactor"] = randrange_float(0.1, 1, 0.01)
+        child["epsilonDecay"] = random.randrange(10, 100, 10)
+        #child["eta"] = randrange_float(0.1, 1, 0.1)
+        #child["gamma"] = randrange_float(0.1, 1, 0.1)
 
         # child["fitness"] = random.randrange(0, 100)       # for debugging the sort function
 
@@ -92,13 +92,31 @@ def mutate(child):
         mutantChild["epsilon"] = random.randrange(1, 100, 1)
         mutantChild["epsilonFactor"] = randrange_float(0, 1, 0.1)
         mutantChild["epsilonDecay"] = random.randrange(1, 100, 1)
-        mutantChild["eta"] = randrange_float(0.1, 1, 0.1)
-        mutantChild["gamma"] = randrange_float(0.1, 1, 0.1)
-
-
+        #mutantChild["eta"] = randrange_float(0.1, 1, 0.1)
+        #mutantChild["gamma"] = randrange_float(0.1, 1, 0.1)
 
         randMutation = random.randrange(0,9)
-        child[randMutation] = mutantChild[randMutation]
+
+        mutantChildValues = mutantChild.values()
+        mutantChildList = list(mutantChildValues)
+
+        newChildValues = child.values()
+        newChildList = list(newChildValues)
+
+        newChildList[randMutation] = mutantChildList[randMutation]
+
+        child = {
+            "hitreward" : newChildList[0],            # a reward value, lets stick to anything                between 1 and 100
+            "badReward" : newChildList[1],            # penatly for hitting a spot we have already shot at,   keep between -100 and -1
+            "missreward" : newChildList[2],           # penatly for missing,                                  keep between -100 and -1
+            "wallreward" : newChildList[3],           # penatly for attempting to shoot a wall,               keep between -100 and -1
+            "epsilon" : newChildList[4],              # percent chance to do something random,                keep between 1 and 100%
+            "epsilonFactor" : newChildList[5],        # how much we want to decrease the epsilon value        keep between 0 and 1
+            "epsilonDecay" : newChildList[6],         # how often we want to decrease the epsilon value       keep between 1 and 100
+            "eta" : newChildList[7],                  # learning rate                                         keep between 0.1 and 1
+            "gamma" : newChildList[8],                # gamma rate                                            keep between 0.1 and 1
+            "fitness" : 0                             # fitness rating                                        do not modify this
+        }
 
         return child
 
@@ -111,23 +129,33 @@ def makeChildren(parentA, parentB):
 
     for i in range(2):
         crossover = random.randrange(9)
-        child = {
-            "hitreward" : 0,            # a reward value, lets stick to anything                between 1 and 100
-            "badReward" : 0,            # penatly for hitting a spot we have already shot at,   keep between -100 and -1
-            "missreward" : 0,           # penatly for missing,                                  keep between -100 and -1
-            "wallreward" : 0,           # penatly for attempting to shoot a wall,               keep between -100 and -1
-            "epsilon" : 0,              # percent chance to do something random,                keep between 1 and 100%
-            "epsilonFactor" : 0,        # how much we want to decrease the epsilon value        keep between 0 and 1
-            "epsilonDecay" : 0,         # how often we want to decrease the epsilon value       keep between 1 and 100
-            "eta" : 0,                  # learning rate                                         keep between 0.1 and 1
-            "gamma" : 0,                # gamma rate                                            keep between 0.1 and 1
-            "fitness" : 0               # fitness rating                                        do not modify this
-        }
+
+        # convert the dictionary into lists
+        parentAValues = parentA.values()
+        parentAList = list(parentAValues)
+
+        parentBValues = parentB.values()
+        parentBList = list(parentBValues)
+
+        childValues = []
 
         for x in range(crossover):
-            child[x] = parentA[x]
+            childValues.append(parentAList[x]) 
         for y in range(crossover, 9):
-            child[y] = parentB[x]
+            childValues.append(parentBList[y])
+
+        child = {
+            "hitreward" : childValues[0],            # a reward value, lets stick to anything                between 1 and 100
+            "badReward" : childValues[1],            # penatly for hitting a spot we have already shot at,   keep between -100 and -1
+            "missreward" : childValues[2],           # penatly for missing,                                  keep between -100 and -1
+            "wallreward" : childValues[3],           # penatly for attempting to shoot a wall,               keep between -100 and -1
+            "epsilon" : childValues[4],              # percent chance to do something random,                keep between 1 and 100%
+            "epsilonFactor" : childValues[5],        # how much we want to decrease the epsilon value        keep between 0 and 1
+            "epsilonDecay" : childValues[6],         # how often we want to decrease the epsilon value       keep between 1 and 100
+            "eta" : childValues[7],                  # learning rate                                         keep between 0.1 and 1
+            "gamma" : childValues[8],                # gamma rate                                            keep between 0.1 and 1
+            "fitness" : 0                            # fitness rating                                        do not modify this
+        }
 
         child = mutate(child)
         newPop.append(child)
@@ -137,6 +165,22 @@ def makeChildren(parentA, parentB):
 
 def playBattleship(episodes, population):
     newPop = []
+
+    for x in range(len(population)):
+        qMatrix = [[0] * 6 for x in range(1024)]
+        moveList = initMoveList()
+        print("Starting battleship...")
+        print(str(population[x]))
+        fitness = qTraining(episodes, population[x]["epsilon"], population[x]["epsilonFactor"], qMatrix, moveList, 10, population[x]["epsilonDecay"], population[x]["eta"], population[x]["gamma"], population[x]["hitreward"], population[x]["badReward"], population[x]["missreward"], population[x]["wallreward"])
+        print("Session over...")
+        population[x]["fitness"] = fitness
+        newPop.append(population[x])
+        print(fitness)
+
+    return newPop
+
+def playBattleshipThreaded(episodes, population):
+    newPop = []
     threads = []
     #qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward)
     # start a thread for each child of the original population
@@ -144,7 +188,7 @@ def playBattleship(episodes, population):
         qMatrix = [[0] * 6 for x in range(1024)] # this will create a blank qMatrix that is 1024 X 6
         moveList = initMoveList()
         fits = []
-        thread = threading.Thread(target=qTraining, args=(episodes, population[x]["epsilon"], population[x]["epsilonFactor"], qMatrix, moveList, 0, population[x]["epsilonDecay"], population[x]["eta"], population[x]["gamma"], population[x]["hitreward"], population[x]["badReward"], population[x]["missreward"], population[x]["wallreward"], fits, x))
+        thread = threading.Thread(target=qTraining, args=(episodes, population[x]["epsilon"], population[x]["epsilonFactor"], qMatrix, moveList, 0, population[x]["epsilonDecay"], population[x]["eta"], population[x]["gamma"], population[x]["hitreward"], population[x]["badReward"], population[x]["missreward"], population[x]["wallreward"], True, fits, x))
         threads.append(thread)
 
     for x in range(len(threads)):
@@ -172,7 +216,10 @@ def geneticQ():
     newPop = []
 
     for i in range(MAXITERATIONS):
-        newPop = playBattleship(EPISODES, population)
+        print("Starting training...")
+        #newPop = playBattleship(EPISODES, population)
+        newPop = playBattleshipThreaded(EPISODES, population)
+        print("Training ended...")
         newPop = sortPopulation(newPop)
 
         if i % OUTPUT == 0:
@@ -456,7 +503,7 @@ def checkWin(enemyBoard):
 # training function. This will train the qMatrix
 # can store and load a qMatrix from storage, allowing us to
 # preserve the current state of the AI 
-def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward, fits, threadNum):
+def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, epsilonDecay, eta, gamma, hitreward, badReward, missreward, wallreward, threaded, fits, thread):
     averageReward = []
 
     # begin training over x episodes
@@ -637,11 +684,14 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
         if reportValue != 0 and e % reportValue == 0 and e != 0:
             print("Episode: " + str(e))
             print("Turns to finish: " + str(iterations) + " Total reward is: " + str(report)) # output what the reward is for the current turn
-    fit = {
-        "thread" : threadNum,
-        "fitness" : sum(averageReward) / len(averageReward)
-    }
-    fits.append(fit)
+
+    if threaded == True:
+        fit = {
+            "thread" : thread,
+            "fitness" : sum(averageReward) / len(averageReward)
+        }
+
+        fits.append(fit)
     return sum(averageReward) / len(averageReward)
 
 
@@ -654,12 +704,13 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
 
 geneticQ()
 
+
 """
 # qLearning variables
-hitreward = 25
-badReward = -10
-missreward = -5
-wallreward = -15
+hitreward = 4
+badReward = -4
+missreward = -12
+wallreward = -20
 
 
 
@@ -675,7 +726,8 @@ else:
     qMatrix = [[0] * 6 for x in range(1024)] # this will create a blank qMatrix that is 1024 X 6
     print("MAKING NEW MATRIX")
 
-qTraining(10000, 20, 0.5, qMatrix, moveList, 100, 50, 0.2, 0.9, hitreward, badReward, missreward, wallreward)
+qTraining(100, 25, 0.89, qMatrix, moveList, 10, 10, 0.2, 0.9, hitreward, badReward, missreward, wallreward)
+#qTraining(100, 10, 0.8, qMatrix, moveList, 10, 20, 0.2, 0.9, 50, -15, -15, -15)
 
 jsonQMatrix = json.dumps(qMatrix)
 with open('qMatrix.json', 'w') as outfile:

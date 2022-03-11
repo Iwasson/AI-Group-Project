@@ -7,9 +7,9 @@ from multiprocessing import Process, Queue
 # genetic algorithm variables
 POPSIZE = 10
 MUTATE = 15
-MAXITERATIONS = 1000
-OUTPUT = 100
-EPISODES = 10000
+MAXITERATIONS = 100
+OUTPUT = 5
+EPISODES = 100
 
 def randrange_float(start, stop, step):
     return random.randint(0, int((stop - start) / step)) * step + start
@@ -728,7 +728,7 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
     
     #queue.put(sum(averageReward) / len(averageReward))
     #return sum(averageReward) / len(averageReward)
-    queue.put(sum(averageIterations) / len(averageIterations))
+    queue.put((1 / (sum(averageIterations) / len(averageIterations))) * 1000)
     return sum(averageIterations) / len(averageIterations)
 
 

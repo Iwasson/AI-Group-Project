@@ -733,7 +733,7 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
 
 
 def validPos (x:int) -> bool:
-    return False if abs(3) > 9 else True
+    return False if abs(x) > 9 else True
 
 
 def adjacentShot (x:int, y:int, guess, enemyBoard) -> int:
@@ -798,7 +798,7 @@ def adjacentShot (x:int, y:int, guess, enemyBoard) -> int:
             while misses != 2:
                 iterations += 1
                 offset = (-1) ** misses * i   
-                if validPos(y+offset):
+                if validPos(y-offset):
                     if enemyBoard[x][y-offset] == ' ': 
                         guess[x][y-offset] = 'M'
                         misses += 1
@@ -860,11 +860,18 @@ def adjacentShot (x:int, y:int, guess, enemyBoard) -> int:
                 else:
                     misses += 1
             return iterations
+    
+    return iterations
 
         
 
 
 def randomPlay () -> int:
+    '''
+    Heuristic closest to actual play
+    AI attacks random until hit then goes for adjacent tiles until orientation of enemy ship known
+    Once ship sunk, repeat
+    '''
      # generate a new battle ship board
     enemyBoard = [[' '] * 10 for x in range(10)]
     placeShips(enemyBoard)
@@ -886,15 +893,25 @@ def randomPlay () -> int:
     return iterations
 
 
+def randomPlayMultiple (iterations:int) -> int:
+    '''
+    Run random heuristic param times
+    Return average
+    '''
+    total = sum(randomPlay() for _ in range (iterations))
+    average = total / iterations
+    print(f'Average over _{iterations}_ iterations: _{average}_')
+    return average
+
+
 # population = initPopulation(100)
 # print(population)
 # population = sortPopulation(population)
 # print(population)
 
+#randomPlayMultiple(1000)
+geneticQ()
 
-#geneticQ()
-
-print (f'Random play: {randomPlay()} iterations to finish')
 """
 # qLearning variables
 hitreward = 4

@@ -732,6 +732,159 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
     return sum(averageIterations) / len(averageIterations)
 
 
+def validPos (x:int) -> bool:
+    return False if abs(3) > 9 else True
+
+
+def adjacentShot (x:int, y:int, guess, enemyBoard) -> int:
+    '''
+        Shoot all tiles adjacent to x,y parameter until another hit
+        then continue firing in that 'orientation'
+        Once 2 misses on both ends, then ship is sunk and return
+        
+        Return: iterations passed
+    '''
+
+ # will store the states of the adjacent tiles
+    # our states are: 
+    #   0 == has not been shot at
+    #   1 == missed
+    #   2 == hit
+    #   3 == wall/out of bounds
+    current = 0
+    north = 0
+    east = 0
+    south = 0
+    west = 0
+
+    current, north, east, south, west = scan(x, y, guess)
+
+    iterations = 0
+
+    if east == 0 and guess[x][y+1] == ' ': # check if we have already tried to shoot here
+        iterations += 1
+        if enemyBoard[x][y+1] == ' ': # if there was no ship, record miss, no new info
+            guess[x][y+1] = 'M'
+        else:                         # if there was a ship, record the hit, orientation now known
+            guess[x][y+1] = 'H'
+            enemyBoard[x][y+1] = 'H'  
+            misses = 0                # AI doesn't know if a ship is sunk, so after 2 misses in either end of orientation, go back to random guess
+            i = 2
+            while misses != 2:
+                iterations += 1
+                offset = (-1) ** misses * i   # determines which end of the boat to shoot after a miss
+                if validPos(y+offset):
+                    if enemyBoard[x][y+offset] == ' ': 
+                        guess[x][y+offset] = 'M'
+                        misses += 1              # After miss, switch to opposite end
+                        i = 1                   # reset distance from initial hit
+                    else:                         
+                        guess[x][y+offset] = 'H'
+                        enemyBoard[x][y+offset] = 'H'
+                        i += 1
+                else:
+                        misses += 1
+            return iterations
+
+    if west == 0 and guess[x][y-1] == ' ':   
+        iterations += 1
+        if enemyBoard[x][y-1] == ' ': 
+            guess[x][y-1] = 'M'
+        else:                         
+            guess[x][y-1] = 'H'
+            enemyBoard[x][y-1] = 'H'  
+            misses = 0                
+            i = 2
+            while misses != 2:
+                iterations += 1
+                offset = (-1) ** misses * i   
+                if validPos(y+offset):
+                    if enemyBoard[x][y-offset] == ' ': 
+                        guess[x][y-offset] = 'M'
+                        misses += 1
+                        i = 1
+                    else:                         
+                        guess[x][y-offset] = 'H'
+                        enemyBoard[x][y-offset] = 'H'
+                        i += 1
+                else:
+                    misses += 1
+            return iterations
+
+    if south == 0 and guess[x+1][y] == ' ': 
+        iterations += 1
+        if enemyBoard[x+1][y] == ' ': 
+            guess[x+1][y] = 'M'
+        else:                        
+            guess[x+1][y] = 'H'
+            enemyBoard[x+1][y] = 'H'  
+            misses = 0                
+            i = 2
+            while misses != 2:
+                iterations += 1
+                offset = (-1) ** misses * i   
+                if validPos(x+offset):
+                    if enemyBoard[x+offset][y] == ' ': 
+                        guess[x+offset][y] = 'M'
+                        misses += 1
+                        i = 1
+                    else:                         
+                        guess[x+offset][y] = 'H'
+                        enemyBoard[x+offset][y] = 'H'
+                        i += 1
+                else:
+                    misses += 1
+            return iterations    
+
+    if north == 0 and guess[x-1][y] == ' ': 
+        iterations += 1
+        if enemyBoard[x-1][y] == ' ': 
+            guess[x-1][y] = 'M'
+        else:                         
+            guess[x-1][y] = 'H'
+            enemyBoard[x-1][y] = 'H'  
+            misses = 0                
+            i = 2
+            while misses != 2:
+                iterations += 1
+                offset = (-1) ** misses * i   
+                if validPos(x-offset):
+                    if enemyBoard[x-offset][y] == ' ': 
+                        guess[x-offset][y] = 'M'
+                        misses += 1
+                        i = 1
+                    else:                         
+                        guess[x-offset][y] = 'H'
+                        enemyBoard[x-offset][y] = 'H'
+                        i += 1
+                else:
+                    misses += 1
+            return iterations
+
+        
+
+
+def randomPlay () -> int:
+     # generate a new battle ship board
+    enemyBoard = [[' '] * 10 for x in range(10)]
+    placeShips(enemyBoard)
+    guessBoard = [[' '] * 10 for x in range(10)]
+
+    finished = False       # keeps track of when the computer has finished sinking all ships
+    iterations = 0         # this will keep track of how long it took for the AI to sink all of the ships
+
+    attackingAdj = False   # Keeps track of whether next move should be random or one of four possible adjacent tiles
+
+    while not finished:
+        iterations += 1
+        x, y = randomShot(guessBoard, enemyBoard) # this will always be a valid location, no walls possible
+        if guessBoard[x][y] == 'H':
+            iterations += adjacentShot(x, y, guessBoard, enemyBoard)
+
+        finished = checkWin(enemyBoard) # this will stop the while loop once we have finished hitting all of the enemy ships
+
+    return iterations
+
 
 # population = initPopulation(100)
 # print(population)
@@ -739,9 +892,9 @@ def qTraining(episodes, epsilon, epsilonFactor, qMatrix, moveList, reportValue, 
 # print(population)
 
 
-geneticQ()
+#geneticQ()
 
-
+print (f'Random play: {randomPlay()} iterations to finish')
 """
 # qLearning variables
 hitreward = 4

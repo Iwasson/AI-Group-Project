@@ -898,9 +898,22 @@ def randomSmartPlayAvg (iterations:int) -> int:
     Run random smart heuristic param times
     Return average
     '''
-    total = sum(randomSmartPlay() for _ in range (iterations))
-    average = total / iterations
-    print(f'Average over _{iterations}_ iterations: _{average}_')
+
+    totals = []
+    for i in range(iterations):
+            totals.append(randomSmartPlay())
+    average = sum(totals) / iterations
+    print(f'Informed Random: Average over _{iterations}_ iterations: _{average}_')
+
+    # Write to file
+    write  = False
+    if write:
+        with open('SmartRandomResults.csv', 'w') as f:
+            iters = range(1,iterations+1)
+            data = list(zip(iters, totals))
+            for i in data:
+                f.write(f"{i}\n")
+
     return average
 
 
@@ -933,9 +946,22 @@ def pureRandomPlayAvg (iterations: int) -> int :
     Run complete random param times
     Return average
     '''
-    total = sum(pureRandomPlay() for _ in range (iterations))
-    average = total / iterations
-    print(f'Average over _{iterations}_ iterations: _{average}_')
+    totals = []
+    for i in range (iterations):
+            totals.append(pureRandomPlay())
+    average = sum(totals) / iterations
+    print(f'Pure Random: Average over _{iterations}_ iterations: _{average}_')
+
+    # Write to file
+    write  = False
+    if write:
+        with open('pureRandomResults.csv', 'w') as f:
+            iters = range(1,iterations+1)
+            data = list(zip(iters, totals))
+            for i in data:
+                f.write(f"{i}\n")
+
+
     return average
 
 

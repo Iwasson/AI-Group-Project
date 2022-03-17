@@ -866,7 +866,7 @@ def adjacentShot (x:int, y:int, guess, enemyBoard) -> int:
         
 
 
-def randomPlay () -> int:
+def randomSmartPlay () -> int:
     '''
     Heuristic closest to actual play
     AI attacks random until hit then goes for adjacent tiles until orientation of enemy ship known
@@ -893,15 +893,52 @@ def randomPlay () -> int:
     return iterations
 
 
-def randomPlayMultiple (iterations:int) -> int:
+def randomSmartPlayAvg (iterations:int) -> int:
     '''
-    Run random heuristic param times
+    Run random smart heuristic param times
     Return average
     '''
-    total = sum(randomPlay() for _ in range (iterations))
+    total = sum(randomSmartPlay() for _ in range (iterations))
     average = total / iterations
     print(f'Average over _{iterations}_ iterations: _{average}_')
     return average
+
+
+
+def pureRandomPlay () -> int :
+    '''
+        Complete random play, even if hit, keep doing selecting tiles at random
+        return average over param iterations
+    '''
+ # generate a new battle ship board
+    enemyBoard = [[' '] * 10 for x in range(10)]
+    placeShips(enemyBoard)
+    guessBoard = [[' '] * 10 for x in range(10)]
+
+    finished = False       # keeps track of when the computer has finished sinking all ships
+    iterations = 0         # this will keep track of how long it took for the AI to sink all of the ships
+
+    while not finished:
+        iterations += 1
+        x, y = randomShot(guessBoard, enemyBoard) # this will always be a valid location, no walls possible
+    
+        finished = checkWin(enemyBoard) # this will stop the while loop once we have finished hitting all of the enemy ships
+
+    return iterations
+
+
+
+def pureRandomPlayAvg (iterations: int) -> int :
+    '''
+    Run complete random param times
+    Return average
+    '''
+    total = sum(pureRandomPlay() for _ in range (iterations))
+    average = total / iterations
+    print(f'Average over _{iterations}_ iterations: _{average}_')
+    return average
+
+
 
 
 # population = initPopulation(100)
@@ -909,8 +946,10 @@ def randomPlayMultiple (iterations:int) -> int:
 # population = sortPopulation(population)
 # print(population)
 
-#randomPlayMultiple(1000)
-geneticQ()
+iter = 100000
+randomSmartPlayAvg(iter)
+pureRandomPlayAvg(iter)
+#geneticQ()
 
 """
 # qLearning variables
